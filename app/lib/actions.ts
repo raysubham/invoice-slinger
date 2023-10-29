@@ -4,6 +4,7 @@ import { sql } from "@vercel/postgres";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { signIn } from "@/auth";
 
 const InvoiceSchema = z.object({
   id: z.string(),
@@ -74,8 +75,6 @@ const DeleteInvoice = InvoiceSchema.pick({ id: true });
 // ...
 
 export async function deleteInvoice(formData: FormData) {
-  throw new Error("Not implemented");
-
   const id = formData.get("id")?.toString();
   try {
     await sql`DELETE FROM invoices WHERE id = ${id}`;
@@ -87,5 +86,19 @@ export async function deleteInvoice(formData: FormData) {
     return {
       message: "Something went wrong",
     };
+  }
+}
+
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData
+) {
+  try {
+    await signIn("credentials", Object.fromEntries(formData));
+  } catch (error) {
+    if ((error as Error).message.includes("CredentialsSignin")) {
+      return "CredentialSignin";
+    }
+    throw error;
   }
 }
